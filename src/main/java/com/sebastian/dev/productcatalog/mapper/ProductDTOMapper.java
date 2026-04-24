@@ -1,14 +1,12 @@
-package com.sebastian.dev.productcatalog.controller.mapper;
+package com.sebastian.dev.productcatalog.mapper;
 
-import org.springframework.stereotype.Component;
 
 import com.sebastian.dev.productcatalog.controller.dto.ProductDTO;
 import com.sebastian.dev.productcatalog.model.document.Product;
 
-@Component
 public class ProductDTOMapper {
 
-    public Product toProduct(ProductDTO dto){
+    public static Product toProduct(ProductDTO dto){
         Product p = new Product();
         p.setName(dto.name());
         p.setDescription(dto.description());
@@ -19,7 +17,7 @@ public class ProductDTOMapper {
         return p;
     }
 
-    public ProductDTO toProductDTO(Product p){
+    public static ProductDTO toProductDTO(Product p){
         ProductDTO dto = new ProductDTO(p.getId(), p.getName(), p.getPrice(), p.getDescription(), p.getSpecifications(), p.getTags());
 
         return dto;

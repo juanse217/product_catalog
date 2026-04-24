@@ -1,5 +1,6 @@
 package com.sebastian.dev.productcatalog.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -21,7 +22,7 @@ public interface ProductRepository extends MongoRepository<Product, String> {
 
         Slice<Product> findByTagsContaining(String tag, Pageable pageable);
 
-        Slice<Product> findByPriceBetween(int min, int max, Pageable pageable);
+        Slice<Product> findByPriceBetween(BigDecimal min, BigDecimal max, Pageable pageable);
 
         @Aggregation(pipeline = {
                  // 1. Convert the Map to an array for searching keys/values

@@ -3,17 +3,20 @@ package com.sebastian.dev.productcatalog.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sebastian.dev.productcatalog.controller.dto.PagedResponse;
 import com.sebastian.dev.productcatalog.controller.dto.ProductDTO;
 import com.sebastian.dev.productcatalog.controller.dto.ProductDTO.OnPost;
-import com.sebastian.dev.productcatalog.controller.mapper.ProductDTOMapper;
+import com.sebastian.dev.productcatalog.mapper.ProductDTOMapper;
 import com.sebastian.dev.productcatalog.model.document.Product;
 import com.sebastian.dev.productcatalog.service.ProductService;
 
 import jakarta.validation.Valid;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -32,74 +35,75 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RequestMapping("/api/products")
 public class ProductController {
     private final ProductService service;
-    private final ProductDTOMapper mapper;
 
-    public ProductController(ProductService service, ProductDTOMapper mapper){
+    public ProductController(ProductService service){
         this.service = service;
-        this.mapper = mapper;
     }
 
     @GetMapping
     public ResponseEntity<List<ProductDTO>> findAllProducts() {
         return ResponseEntity.ok(service.findAllProducts()
                                         .stream()
-                                        .map(mapper::toProductDTO)
+                                        .map(ProductDTOMapper::toProductDTO)
                                         .toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> findProductById(@PathVariable String id) {
-        return ResponseEntity.ok(mapper.toProductDTO(service.findProductById(id)));
+        return ResponseEntity.ok(ProductDTOMapper.toProductDTO(service.findProductById(id)));
     }
 
     @GetMapping("/word")
     public ResponseEntity<List<ProductDTO>> findAllContainingWord(@RequestParam String word) {
         return ResponseEntity.ok(service.findProductByNameOrDescriptionContaining(word)
                                         .stream()
-                                        .map(mapper::toProductDTO)
+                                        .map(ProductDTOMapper::toProductDTO)
                                         .toList());
     }
 
     @GetMapping("/tag")
-    public ResponseEntity<List<ProductDTO>> findAllContainingTag(@RequestParam String tag, Pageable pageable) {
-        return ResponseEntity.ok(service.findProductsByTag(tag, pageable)
+    public ResponseEntity<PagedResponse<ProductDTO>> findAllContainingTag(@RequestParam String tag, Pageable pageable) {
+        Slice<Product> slice = service.findProductsByTag(tag, pageable);
+        List<ProductDTO> dtos =  slice.getContent()
                                         .stream()
-                                        .map(mapper::toProductDTO)
-                                        .toList());
+                                        .map(ProductDTOMapper::toProductDTO)
+                                        .toList();
+
+        return ResponseEntity.ok(new PagedResponse<>(dtos, slice.getNumber(), slice.getSize(), slice.hasNext()));
     }
     
     @GetMapping("/specifications")
-    public ResponseEntity<List<ProductDTO>> findByKeyAndValue(@RequestParam String key, @RequestParam String value, Pageable pageable) {
-        return ResponseEntity.ok(
-                service.findProductBySpecificationKeyAndValue(key, value, pageable)
-                        .stream()
-                        .map(mapper::toProductDTO)
-                        .toList()
-            );
+    public ResponseEntity<PagedResponse<ProductDTO>> findByKeyAndValue(@RequestParam String key, @RequestParam String value, Pageable pageable) {
+        Slice<Product> slice = service.findProductBySpecificationKeyAndValue(key, value, pageable);
+        List<ProductDTO> dtos = slice.getContent()
+                                    .stream()
+                                    .map(ProductDTOMapper::toProductDTO)
+                                    .toList();
+        return ResponseEntity.ok(new PagedResponse<>(dtos, slice.getNumber(), slice.getSize(), slice.hasNext()));
     }
     
-    @GetMapping("range")
-    public ResponseEntity<List<ProductDTO>> findByRange(@RequestParam Integer min, @RequestParam Integer max, Pageable pageable) {
-        return ResponseEntity.ok(
-            service.findProductInPriceRange(min, max, pageable)
-                    .stream()
-                    .map(mapper::toProductDTO)
-                    .toList()
-        );
+    @GetMapping("/range")
+    public ResponseEntity<PagedResponse<ProductDTO>> findByRange(@RequestParam BigDecimal min, @RequestParam BigDecimal max, Pageable pageable) {
+        Slice<Product> slice = service.findProductInPriceRange(min, max, pageable);
+        List<ProductDTO> dtos = slice.getContent()
+                                    .stream()
+                                    .map(ProductDTOMapper::toProductDTO)
+                                    .toList();
+        return ResponseEntity.ok(new PagedResponse<>(dtos, slice.getNumber(), slice.getSize(), slice.hasNext()));
     }
     
     
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@Validated(OnPost.class) @RequestBody ProductDTO dto) {
-        Product saved = service.createProduct(mapper.toProduct(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toProductDTO(saved));
+        Product saved = service.createProduct(ProductDTOMapper.toProduct(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProductDTOMapper.toProductDTO(saved));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable String id, @Valid @RequestBody ProductDTO dto) {
-        Product updated = service.updateProduct(mapper.toProduct(dto), id);
+        Product updated = service.updateProduct(ProductDTOMapper.toProduct(dto), id);
 
-        return ResponseEntity.ok(mapper.toProductDTO(updated));
+        return ResponseEntity.ok(ProductDTOMapper.toProductDTO(updated));
     }
 
     @DeleteMapping("/{id}")
