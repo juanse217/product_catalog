@@ -13,6 +13,7 @@ import com.sebastian.dev.productcatalog.service.ProductService;
 import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -96,7 +97,7 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@Validated(OnPost.class) @RequestBody ProductDTO dto) {
         Product saved = service.createProduct(ProductDTOMapper.toProduct(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(ProductDTOMapper.toProductDTO(saved));
+        return ResponseEntity.created(URI.create("/api/products/" + saved.getId())).body(ProductDTOMapper.toProductDTO(saved));
     }
 
     @PutMapping("/{id}")
